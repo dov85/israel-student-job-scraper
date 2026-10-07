@@ -1,0 +1,645 @@
+# Job sources — all of these are open. None require approval or credentials.
+# To add a company: add an entry. No code changes needed.
+# To disable one temporarily: set enabled: false
+#
+# Connector types available:
+#   comeet           uid + token, both read off the company's careers page
+#                    with --probe (see the blocked: section below)
+#   teamtailor       base = the career site root, e.g. careers.acme.com
+#   comeet_embed     url = the careers page itself; no token needed when the
+#                    Comeet plugin renders the board into the page
+#   trigo, hailo, magnus   bespoke career sites; url only
+#
+# `site:` is the company's own domain. It is used only to show a logo on the
+# company tiles in the web UI, and is optional — without it the tile falls back
+# to a monogram. It is declared here rather than guessed from job URLs, because
+# those point at the ATS: Aidoc's jobs live on greenhouse.io, which would put
+# Greenhouse's logo on Aidoc's tile.
+#   greenhouse       token = path segment on job-boards.greenhouse.io/{token}
+#   lever            token = path segment on jobs.lever.co/{token}
+#   ashby            token = path segment on jobs.ashbyhq.com/{token}
+#   smartrecruiters  token = path segment on jobs.smartrecruiters.com/{token}
+#                    optional country: ISO-2, defaults to "il"
+#   workday          host/tenant/site from the careers URL
+#   eightfold_pcsx, eightfold_v2, radancy, google_careers, apple, mobileye,
+#   rafael, elbit
+#
+# lever and smartrecruiters are wired up but currently unused. They are here
+# so the next company on one of them costs a line of YAML, not code.
+
+sources:
+
+  # ---------- Greenhouse ----------
+  # Public documented API. Token is the path segment on the company's
+  # job-boards.greenhouse.io URL. Verified live 2026-08-12.
+  - name: Wiz
+    site: wiz.io
+    type: greenhouse
+    token: wizinc
+    enabled: true
+
+  - name: Taboola
+    site: taboola.com
+    type: greenhouse
+    token: taboola
+    enabled: true
+
+  - name: JFrog
+    site: jfrog.com
+    type: greenhouse
+    token: jfrog
+    enabled: true
+
+  - name: MyHeritage
+    site: myheritage.com
+    type: greenhouse
+    token: myheritage
+    enabled: true
+
+  # Computer vision. Radiology AI — the whole product is image analysis.
+  # 30 jobs, ~23 of them Tel Aviv. Verified live 2026-08-23.
+  - name: Aidoc
+    site: aidoc.com
+    type: greenhouse
+    token: aidocmedical
+    enabled: true
+
+  # Computer vision. Photo/video generative imaging (Facetune, Videoleap).
+  # The company rebranded to LTX and moved its board with it: the old
+  # `lightricks` token still answers HTTP 200 but with zero jobs, which is why
+  # this source read "returned 0 jobs". The live token is in the page source
+  # of ltx.io/careers. Name kept so the job history stays under one company.
+  # Verified live 2026-10-07.
+  - name: Lightricks
+    site: ltx.io
+    type: greenhouse
+    token: ltx
+    enabled: true
+
+  # ---------- Ashby ----------
+  # Computer vision: stroke and cardiac detection on CT scans. 18 jobs, 7 of
+  # them Tel Aviv. The token includes the dot. Verified live 2026-10-07.
+  - name: Viz.ai
+    site: viz.ai
+    type: ashby
+    token: viz.ai
+    enabled: true
+
+  # ---------- Workday ----------
+  # POST endpoint. Find host/tenant/site from the company's careers URL:
+  #   https://{tenant}.{host}.myworkdayjobs.com/{site}
+  # student_facet is the workerSubType facet ID for student/intern roles.
+  # Leave student_facet empty to pull everything and filter by keyword.
+  - name: Intel
+    site: intel.com
+    type: workday
+    host: wd1
+    tenant: intel
+    site: External
+    student_facets:
+      workerSubType:
+        - dc8bf79476611087dfde99931439ae75   # Student / Intern (Fixed Term)
+    enabled: true
+
+  - name: NVIDIA
+    site: nvidia.com
+    type: workday
+    host: wd5
+    tenant: nvidia
+    site: NVIDIAExternalCareerSite
+    student_facets:
+      workerSubType:
+        - ab40a98049581037a3ada55b087049b7   # New College Graduate
+        - 0c40f6bd1d8f10adf6dae42e46d44a17   # Intern (Fixed Term)
+    enabled: true
+
+  # GM's Israel site in Herzliya is an autonomous-driving / perception centre
+  # and posts roles like "Computer Vision Algorithms Engineer". No student
+  # facet ID is known for this tenant, so the whole board is pulled and the
+  # keyword filter does the work — that is ~100 requests, the slowest source
+  # here. Verified the tenant/site 2026-08-23.
+  - name: General Motors
+    site: gm.com
+    type: workday
+    host: wd5
+    tenant: generalmotors
+    site: Careers_GM
+    enabled: true
+
+  # Medical imaging. Mazor (surgical navigation, Caesarea) and Ventor sit
+  # inside Medtronic. The global board is ~1100 rows, so it is narrowed at
+  # source with the tenant's own country facet: Israel = 34 rows, 2 requests.
+  # student_facets is passed through as Workday's appliedFacets, so despite
+  # the name it takes any facet — here a location one. Verified 2026-10-07.
+  - name: Medtronic
+    site: medtronic.com
+    type: workday
+    host: wd1
+    tenant: medtronic
+    site: MedtronicCareers
+    student_facets:
+      locationCountry:
+        - 084562884af243748dad7c84c304d89a   # Israel
+    enabled: true
+
+  # Computer vision: wafer and PCB optical inspection (KLA Israel, formerly
+  # Orbotech, in Yavne and Migdal HaEmek). ~1070 rows globally, 75 in Israel
+  # through the country facet. Verified 2026-10-07.
+  - name: KLA
+    site: kla.com
+    type: workday
+    host: wd1
+    tenant: kla
+    site: Search
+    student_facets:
+      Country:
+        - 084562884af243748dad7c84c304d89a   # Israel
+    enabled: true
+
+  # Medical imaging R&D in Haifa. The global board is enormous and only a
+  # handful of rows are Israeli, so it is off; a country facet like
+  # Medtronic's above would fix that.
+  - name: Philips
+    site: philips.com
+    type: workday
+    host: wd3
+    tenant: philips
+    site: jobs-and-careers
+    enabled: false
+
+  # ---------- Eightfold ----------
+  # Two dialects. Microsoft uses /api/pcsx/search, Amdocs uses /api/apply/v2/jobs.
+  - name: Microsoft
+    site: microsoft.com
+    type: eightfold_pcsx
+    base: https://apply.careers.microsoft.com
+    domain: microsoft.com
+    location: Israel
+    enabled: true
+
+  # Amdocs: /api/apply/v2/jobs now returns 403, same as Microsoft. The pcsx
+  # dialect works, but its location filter returns 0 for every value tested,
+  # so the filter is disabled and the Israel classifier does the work instead.
+  # Low yield — this tenant exposes only a handful of jobs publicly.
+  - name: Amdocs
+    site: amdocs.com
+    type: eightfold_pcsx
+    base: https://amdocs.eightfold.ai
+    domain: amdocs.com
+    use_location_param: false
+    enabled: true
+
+  # ---------- Google ----------
+  # Server-side rendered results page. No API needed, but the most fragile
+  # connector here because it depends on page markup.
+  - name: Google
+    site: google.com
+    type: google_careers
+    location: Israel
+    max_pages: 6
+    enabled: true
+
+  # ---------- Server-rendered career sites ----------
+  # No API, but the results HTML is rendered server-side so a plain fetch works.
+  - name: Apple
+    site: apple.com
+    type: apple
+    location_code: israel-ISR
+    max_pages: 6
+    enabled: true
+
+  # Mobileye renders all ~141 jobs on a single page. No pagination, and no
+  # location filter — the Israel classifier separates Ramat Gan from Beijing.
+  - name: Mobileye
+    site: mobileye.com
+    type: mobileye
+    enabled: true
+
+  # ---------- Comeet ----------
+  # uid + token read straight off each company's own careers page with
+  # --probe. details=true is requested, so these carry Description and
+  # Requirements text — --max-years works here.
+  # Computer vision: vehicle inspection.
+  - name: UVeye
+    site: uveye.com
+    type: comeet
+    uid: "92.00F"
+    token: "29FA7C17971797FBA179753E53E0A7C"
+    enabled: true
+
+  # Computer vision: autonomous drones for industrial visual inspection.
+  - name: Percepto
+    site: percepto.co
+    type: comeet
+    uid: "44.000"
+    token: "440154015404400088019802640880"
+    enabled: true
+
+  # Computer vision: automated sports video highlights.
+  - name: WSC Sports
+    site: wsc-sports.com
+    type: comeet
+    uid: "93.007"
+    token: "39711F3AC5AC539701CB81CB8204FE5C"
+    enabled: true
+
+  # The two below link out to a Comeet-hosted board instead of embedding the
+  # widget, so their own careers pages carry no token. The hosted board does:
+  # comeet.com/jobs/{slug}/{uid} has it in COMPANY_DATA. Read 2026-10-07.
+  # Defence tech: command & control, sensor fusion. Tel Aviv.
+  # Site is kela.io — kela.com is an unrelated company.
+  - name: Kela Technologies
+    site: kela.io
+    type: comeet
+    uid: "2A.007"
+    token: "A2747111E755B5F0513847114711A274711"
+    enabled: true
+
+  # Computer vision: robotic eye surgery. Caesarea.
+  - name: Forsight Robotics
+    site: forsightrobotics.com
+    type: comeet
+    uid: "E9.008"
+    token: "9E845581DB8009E83B7027A001DB8"
+    enabled: true
+
+  # Computer vision: automotive LiDAR. Their own site sits behind Imperva and
+  # cannot be probed, but the Comeet-hosted board is open.
+  - name: Innoviz
+    site: innoviz.tech
+    type: comeet
+    uid: "52.004"
+    token: "25495012A0104C012A0104C6FCBA40"
+    enabled: true
+
+  # Computer vision adjacent: scenario simulation for autonomous driving.
+  # The board was empty on 2026-10-07 — no open positions, not a parse
+  # failure — so this reads "returned 0 jobs" until they post again.
+  - name: Foretellix
+    site: foretellix.com
+    type: comeet
+    uid: "84.007"
+    token: "48716A316A31FB101FB116A3D951FB11B2A"
+    enabled: true
+
+  # Medical imaging: digital X-ray and radiology AI.
+  - name: Nanox
+    site: nanox.vision
+    type: comeet
+    uid: "43.00F"
+    token: "34F108B69E34F108B13DA17299ED13DAD3C"
+    enabled: true
+
+  # Vision team inside a multinational: image sensors and camera pipelines.
+  - name: Samsung R&D Israel
+    site: samsung.com
+    type: comeet
+    uid: "D4.005"
+    token: "4D518291CFE13540135413544D518291CFE"
+    enabled: true
+
+  # Computer-vision sweep of 2026-10-07. Tokens read from each company's
+  # Comeet-hosted board, same as Kela above.
+  # Computer vision: self-learning AI for ADAS and autonomous driving.
+  - name: Autobrains
+    site: autobrains.ai
+    type: comeet
+    uid: "57.004"
+    token: "7542BF815FC2BF8EA83AA024A42BF841F415FC"
+    enabled: true
+
+  # Computer vision / optics: waveguide displays for AR glasses. Ness Ziona.
+  - name: Lumus
+    site: lumusvision.com
+    type: comeet
+    uid: "62.00F"
+    token: "26F9BC15E726F74D110915E74DE4DEE9A"
+    enabled: true
+
+  # Computer vision: humanoid robots, perception and navigation. Herzliya.
+  - name: Mentee Robotics
+    site: menteebot.com
+    type: comeet
+    uid: "6A.002"
+    token: "A6248AE298853101F2614C45D7214C433EA5310"
+    enabled: true
+
+  # Computer vision: smartphone-camera urinalysis and wound imaging.
+  - name: Healthy.io
+    site: healthy.io
+    type: comeet
+    uid: "B4.004"
+    token: "4B417841C3804B420EC02A54E1C4B4"
+    enabled: true
+
+  # ---------- Comeet, rendered into the company's own page ----------
+  # The Comeet WordPress plugin puts the board in the HTML, so these need no
+  # token at all — just the careers page URL. Verified 2026-08-23.
+  # Computer vision: automotive imaging radar.
+  - name: Arbe Robotics
+    site: arberobotics.com
+    type: comeet_embed
+    url: https://www.arberobotics.com/careers/
+    enabled: true
+
+  # Computer vision: camera-only autonomous driving.
+  - name: Imagry
+    site: imagry.co
+    type: comeet_embed
+    url: https://www.imagry.co/careers/
+    enabled: true
+
+  # Computer vision: electro-optic obstacle detection for trains. Raanana.
+  - name: Rail Vision
+    site: railvision.io
+    type: comeet_embed
+    url: https://www.railvision.io/careers
+    enabled: true
+
+  # Computer vision: autonomous drones and counter-drone systems (Ondas).
+  # Petah Tikva.
+  - name: Airobotics
+    site: airoboticsdrones.com
+    type: comeet_embed
+    url: https://www.airoboticsdrones.com/careers
+    enabled: true
+
+  # ---------- Hailo ----------
+  # Custom theme backed by Comeet data but with none of the plugin's markup,
+  # which is why two signature scans came up empty. Server-rendered, one page,
+  # client-side pagination — a single fetch is the whole board.
+  # Note: as of 2026-08-23 that board holds exactly one catch-all posting
+  # ("Hailo has amazing openings!"). The Comeet-hosted board agrees — it says
+  # no open positions. Nothing is being missed; they are simply not listing
+  # individual roles right now. Kept on so that they appear when they do.
+  - name: Hailo
+    site: hailo.ai
+    type: hailo
+    url: https://hailo.ai/company-overview/careers/
+    enabled: true
+
+  # ---------- Trigo ----------
+  # Computer vision: checkout-free retail. Bespoke WordPress theme rather than
+  # the Comeet plugin, though the links carry Comeet position UIDs. Everything
+  # on one page, no pagination.
+  - name: Trigo
+    site: trigoretail.com
+    type: trigo
+    url: https://www.trigoretail.com/careers/
+    enabled: true
+
+  # ---------- Magnus Metal ----------
+  # Metal additive manufacturing. Elementor page with no ATS behind it; all
+  # jobs on one page. The cards state no location, and the company has one
+  # site, so it is declared here.
+  - name: Magnus Metal
+    site: magnusmetal.com
+    type: magnus
+    url: https://www.magnusmetal.com/careers/
+    location: Kibbutz Revadim, Israel
+    enabled: true
+
+  # ---------- Teamtailor ----------
+  # No key-free API, but the career site is server-rendered, so {base}/jobs
+  # is a plain fetch. Nexar moved off their main domain to this subdomain.
+  # Computer vision: dashcam road perception. Small board.
+  - name: Nexar
+    site: getnexar.com
+    type: teamtailor
+    base: https://careers.getnexar.com
+    max_pages: 10
+    enabled: true
+
+  # ---------- Radancy / TalentBrew ----------
+  # Server-rendered career site, paginated through the URL path. `path` must
+  # contain {page}; copy the rest straight from the site's own location filter.
+  # Palo Alto Networks: 147 jobs in Israel across 10 pages, 15 per page, in
+  # Tel Aviv and Petah Tikva. Their old SmartRecruiters board
+  # (careers.smartrecruiters.com/PaloAltoNetworks2) now redirects away and is
+  # dead — this is the live one. Verified 2026-08-23.
+  - name: Palo Alto Networks
+    site: paloaltonetworks.com
+    type: radancy
+    base: https://jobs.paloaltonetworks.com
+    path: /en/location/israel-jobs/47263/294640/2/{page}
+    max_pages: 12
+    verbose: true          # prints per-page counts; this source is slow
+    enabled: true
+
+  # ---------- Israeli defence ----------
+  # Rafael: public JSON at /api/jobs. 315 jobs, of which 59 carry job type 2 =
+  # "משרת סטודנט". An explicit student flag, far better than keyword guessing.
+  - name: רפאל
+    site: rafael.co.il
+    type: rafael
+    enabled: true
+    areas:
+      1:  "שלוחת ירושלים"
+      3:  "אתר ינט - ראשון לציון"
+      4:  "תרדיון - גוש שגב"
+      5:  "שלוחת באר שבע"
+      6:  "גבעתיים"
+      7:  "מכון דוד - קריות"
+      8:  "מכון לשם - גוש שגב"
+      9:  "שלוחת תל אביב"
+      10: "שדמה - מצפה רמון"
+      11: "שלוחת שלומי"
+      12: "העוגן - תל השומר"
+      13: "שלוחת חדרה"
+      14: "שלוחת חיפה"
+
+  # Elbit: static JSON refreshed by their own cron. 635 jobs, ~41 student roles.
+  # Includes full description and requirements, so years-of-experience parsing
+  # works here — unlike Workday and Eightfold.
+  - name: אלביט מערכות
+    site: elbitsystems.com
+    type: elbit
+    enabled: true
+
+
+# ---------------------------------------------------------------------------
+# Companies mapped but NOT usable without approval or further work.
+# Kept here as documentation. All disabled.
+#
+# The Comeet rows are one --probe away from working — see the note below them.
+# ---------------------------------------------------------------------------
+
+blocked:
+
+  # Comeet / Spark Hire Recruit — needs a per-company token that is not
+  # derivable from the UID. Verified: token=UID returns HTTP 400.
+  # The token is NOT a secret: Comeet's own widget docs put it in the careers
+  # page source. `--probe <careers page URL>` reads it out. The partner
+  # program (partners@comeet.co) is only needed for boards that do not embed
+  # the widget on their own site.
+  - {name: Riskified,            type: comeet, uid: "81.004", token: null}
+  - {name: Armis,                type: comeet, uid: "94.00C", token: null}
+  - {name: BioCatch,             type: comeet, uid: "03.00E", token: null}
+  - {name: Pentera,              type: comeet, uid: "c5.00d", token: null}
+  - {name: Skai,                 type: comeet, uid: "22.00A", token: null}
+  - {name: Natural Intelligence, type: comeet, uid: "71.001", token: null}
+  - {name: Mend.io,              type: comeet, uid: "83.000", token: null}
+  - {name: Nova,                 type: comeet, uid: "A5.007", token: null}
+  - {name: FundGuard,            type: comeet, uid: "37.002", token: null}
+  - {name: CodeValue,            type: comeet, uid: "81.009", token: null}
+  - {name: Lasso Security,       type: comeet, uid: "F9.008", token: null}
+  - {name: Payoneer,             type: comeet, uid: "C0.00E", token: null}
+  - {name: HiBob,                type: comeet, uid: null,     token: null}
+
+  # Israeli computer-vision companies, mapped 2026-08-23. Every one of them is
+  # on Comeet. There is now a `comeet` connector — all that is missing per
+  # company is the token, which sits in the page source of their own careers
+  # page inside COMEET.init({...}). To turn any row below into a live source:
+  #
+  #     python scraper.py --probe https://THEIR-SITE/careers
+  #
+  # It prints the uid and token and the exact YAML to paste. Move the entry up
+  # into `sources:`, fill in the token, set enabled: true. Probe the company's
+  # OWN domain — a comeet.com/jobs/... page carries no token.
+  #
+  # details=true is requested, so Comeet returns Description and Requirements:
+  # --max-years works on these sources, unlike Workday or Eightfold.
+  #   pure vision
+  - {name: Sightful,             type: comeet, uid: "26.00D", token: null}
+  #   vision teams inside multinationals
+  - {name: Sony Semiconductor Israel, type: comeet, uid: "88.003", token: null}
+
+  # IAI - partially mapped. WordPress (same theme vendor as Rafael) but jobs
+  # load through admin-ajax, and the site runs Akamai bot protection which
+  # will very likely refuse a plain Python request. 512 jobs, URLs /job/{id}.
+  # Needs the admin-ajax action name before a connector can be written.
+  - {name: "התעשייה האווירית", note: "512 jobs; admin-ajax + Akamai bot protection"}
+
+  # Checked against Greenhouse, Lever, Ashby and SmartRecruiters on 2026-08-23
+  # and present on none of them. Almost certainly Comeet; UID not yet found.
+  - {name: Corsight AI,  note: "no public board found"}
+  - {name: BriefCam,     note: "no public board found"}
+  - {name: Oosto,        note: "no public board found"}
+  - {name: OrCam,        note: "no public board found"}
+  - {name: Cortica,      note: "greenhouse/cortica is a different US company"}
+  - {name: Datagen,      note: "no public board found"}
+  - {name: Vayyar,       note: "Workable (apply.workable.com/vayyar) — no connector yet"}
+  - {name: Cognata,      note: "no public board found"}
+  - {name: Cipia,        note: "no public board found"}
+  - {name: Ibex Medical Analytics, note: "Recruitee (ib1.recruitee.com) — no connector yet"}
+  # Swept 2026-10-07, connector works but nothing in Israel to show:
+  - {name: Taranis,      note: "comeet uid 34.003 works; all 6 jobs are in the US"}
+  - {name: Bluewhite,    note: "comeet uid D5.00D works; board empty"}
+  # Swept 2026-10-07, no board found on their own careers page:
+  #   Theator, Camtek, Nova, XTEND, OrCam, Greeneye, Tevel, Syte, Ottopia,
+  #   Sightful, Brightway Vision, Opsys, Tactile Mobility, Applied Materials
+
+  # ATS not yet identified
+  - {name: Fiverr,      note: "not on Greenhouse/Lever/Ashby/SmartRecruiters"}
+  - {name: CrowdStrike, note: "not on Greenhouse/Lever/Ashby/SmartRecruiters"}
+  - {name: Varonis,     note: "careers page is HubSpot; jobs on an inner page"}
+  - {name: Elementor,   note: "ATS unknown"}
+
+
+# ---------------------------------------------------------------------------
+# Filtering
+# ---------------------------------------------------------------------------
+
+filters:
+
+  israel_terms:
+    - israel
+    - tel aviv
+    - tel-aviv
+    - telaviv
+    - tlv
+    - herzliya
+    - herzeliya
+    - haifa
+    - raanana
+    - ra'anana
+    - netanya
+    - yokneam
+    - jokneam
+    - petah tikva
+    - petah-tikva
+    - petach tikva
+    - beer sheva
+    - be'er sheva
+    - jerusalem
+    - kiryat gat
+    - kiryat-gat
+    - rehovot
+    - ramat gan
+    - givatayim
+    - hod hasharon
+    - caesarea
+    - modiin
+    - airport city
+    - yakum
+    - "תל אביב"
+    - "ישראל"
+    - "חיפה"
+    - "ירושלים"
+
+  student_terms:
+    # English
+    - student
+    - intern
+    - internship
+    - working student
+    - entry level
+    - entry-level
+    - junior
+    - graduate
+    - new grad
+    - new college graduate
+    - apprentice
+    - trainee
+    - co-op
+    # Hebrew
+    - "משרת סטודנט"
+    - "סטודנט"
+    - "סטודנטית"
+    - "מתמחה"
+    - "התמחות"
+    - "משרה חלקית"
+    - "חצי משרה"
+    - "ללא ניסיון"
+    - "ללא נסיון"
+    - "ג'וניור"
+    - "גוניור"
+    - "סטאז"
+
+  # Titles STARTING with any of these are marked senior. Prefix-only, so
+  # "Intern, Senior Design Team" is not caught.
+  senior_title_prefixes:
+    - senior
+    - sr
+    - "sr."
+    - staff
+    - principal
+    - lead
+    - head
+    - director
+    - vp
+    - chief
+    - "בכיר"
+
+  part_time_terms:
+    - part-time
+    - part time
+    - parttime
+    - hourly
+    - "משרה חלקית"
+    - "חצי משרה"
+    - "משרת סטודנט"
+
+  # Titles containing these are never student roles, even if a student
+  # keyword matched somewhere. Guards against "Senior ... Intern Program Manager".
+  student_exclude:
+    - senior
+    - staff
+    - principal
+    - lead
+    - manager
+    - director
+    - head of
+    - architect
+    - vp
+    - chief

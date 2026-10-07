@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+
+# Generated on every run
+jobs.db
+jobs.csv
+report.html
+
+# Pages saved by --probe and --debug
+probe*.html
+debug_*.html
